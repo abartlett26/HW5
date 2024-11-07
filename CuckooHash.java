@@ -1,6 +1,6 @@
 /******************************************************************
  *
- *   YOUR NAME / SECTION NUMBER
+ *   ANNIKA BARTLETT / 002
  *
  *   Note, additional comments provided throughout this source code
  *   is for educational purposes
@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.swing.RowFilter.Entry;
+
 import java.lang.Math;
 
 
@@ -188,7 +191,7 @@ public class CuckooHash<K, V> {
 	 * Each element's initial location will always be defined
 	 * by h1(key). If later it is kicked out of that bucket location by 
      * another element insertion, it will move back and forth between those
-     *  two hash locations (aka, bucket locations).
+     * two hash locations (aka, bucket locations).
 	 *
 	 * On its initial invocation, this method places the passed <key,value>
 	 * element at its h1(key) bucket location. If an element is already located
@@ -222,7 +225,7 @@ public class CuckooHash<K, V> {
 	 *            determined by hashing the 'key'
 	 *          - Normally, we would not allow dupe keys, for our purposes here we
 	 *            WILL allow. What will be unique in this assignment's implementation
-	 *            is the <key,value> in the table. So when inserting a key that is
+	 *            is the <key, value> in the table. So when inserting a key that is
 	 *            already in the table, continue unless a dupe key has the same
 	 *            value as being inserted.
 	 *
@@ -245,12 +248,58 @@ public class CuckooHash<K, V> {
 	 */
 
  	public void put(K key, V value) {
+		int maxAttempts = CAPACITY;
+		int attempts = 0;
+		while (attempts < maxAttempts) {
+			// look at first position
+			int position = hash1(key);
+			
+			// if empty, just insert
+			if (table[position] == null) {
+				table[position] = new Bucket<>(key, value);
+				return;
+			
+			// if key & value is the same
+			} else if (table[position].getBucKey().equals(key) && table[position].getValue().equals(value)) {
+				// do nothing
+				return;
 
-		// ADD YOUR CODE HERE - DO NOT FORGET TO ADD YOUR NAME AT TOP OF FILE.
-		// Also make sure you read this method's prologue above, it should help
-		// you. Especially the two HINTS in the prologue.
+			// occupied but nothing is the same
+			} else {
+				// grab old key & value
+				K oldKey = table[position].getBucKey();
+				V oldValue = table[position].getValue();
 
-		return;
+				// put in current key & value
+				table[position] = new Bucket<>(key, value);
+
+				// old becomes current
+				key = oldKey;
+				value = oldValue;
+
+				// look at other position and check all the same things
+				position = hash2(key);
+				if (table[position] == null) {
+					table[position] = new Bucket<>(key, value);
+					return;
+				} else if (table[position].getBucKey().equals(key) && table[position].getValue().equals(value)) {
+					return;
+				} else {
+					oldKey = table[position].getBucKey();
+					oldValue = table[position].getValue();
+					table[position] = new Bucket<>(key, value);
+					key = oldKey;
+					value = oldValue;
+					attempts++;
+					// go back to the beginning and try again
+				}
+			}
+		}
+		// if exceeds attempts, rehash
+		if (attempts >= maxAttempts) {
+			rehash();
+			put(key, value);
+		}
 	}
 
 
@@ -353,4 +402,3 @@ public class CuckooHash<K, V> {
 	}
 
 }
-
